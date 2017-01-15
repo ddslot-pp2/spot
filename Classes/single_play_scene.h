@@ -60,12 +60,17 @@ public:
     bool check_find_answer(const Point& point);
 
     void correct_effect(int index);
-    void incorrect_effect();
-    
+    void incorrect_effect(Point point);
+    void done_incorrect_effect();
+
+    void create_timer();
+    void on_update_timer();
+
  private:
     Texture2D left_texture;
     Texture2D right_texture;
     Vec2 origin_;
+    Vec2 center_;
 
     //cocos2d::Vector<cocos2d::Rect*> mpData;
     //Vector<Rect*> spot_container;
@@ -75,7 +80,13 @@ public:
     std::shared_ptr<stage_info> stage_info_;
     std::shared_ptr<spots_info> spots_info_;
 
+    bool enable_input_;
+
     SINGLE_PLAY_STATUS single_play_status_;
+
+    ProgressTimer* progress_timebar_;
+    Sprite* time_bar;
+
 };
 
 #endif 

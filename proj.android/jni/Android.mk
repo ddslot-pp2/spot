@@ -14,6 +14,7 @@ LOCAL_MODULE_FILENAME := libMyGame
 LOCAL_SRC_FILES := hellocpp/main.cpp \
                    ../../Classes/AppDelegate.cpp \
                    ../../Classes/utils.cpp \
+                   ../../Classes/json11.cpp \
                    ../../Classes/single_play_scene.cpp \
                    ../../Classes/HelloWorldScene.cpp
 

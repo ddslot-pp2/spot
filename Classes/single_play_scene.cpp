@@ -4,6 +4,8 @@
 #include "utils.h"
 #include "json11.h"
 
+using namespace CocosDenshion;
+
 Scene* single_play_scene::createScene()
 {
   // 'scene' is an autorelease object
@@ -31,6 +33,9 @@ bool single_play_scene::init()
   // 스테이지 인포 가져오기
   single_play_status_ = SINGLE_PLAY_STATUS::LOADING;
 
+  // input control
+  enable_input_ = true;
+
   //save_user_info("string_test", std::string("testing"));
   save_user_info("current_stage", 1);
 
@@ -41,11 +46,16 @@ bool single_play_scene::init()
 
   // http request for gathering stage information
   CCLOG("1\n");
-  http_request("http://127.0.0.1:3000/stage_info/0", "stage_info");
+  
+  auto req_url = std::string(req_stage_info_url) + "0";
+  http_request(req_url.c_str(), "stage_info");
   CCLOG("3\n");  
     
   auto visibleSize = Director::getInstance()->getVisibleSize();
   origin_ = Director::getInstance()->getVisibleOrigin();
+
+  center_ = Vec2(origin_.x + visibleSize.width/2,
+		 origin_.y + visibleSize.height/2);
 
   /////////////////////////////
   // 2. add a menu item with "X" image, which is clicked to quit the program
@@ -74,6 +84,10 @@ bool single_play_scene::init()
   label_->setPosition(Vec2(origin_.x + visibleSize.width/2,
 			  origin_.y + visibleSize.height - label_->getContentSize().height));
   this->addChild(label_, 1);
+
+
+  // load ui
+  create_timer();
 
   // bg
   /*
@@ -232,6 +246,8 @@ void single_play_scene::on_http_request_completed(HttpClient *sender, HttpRespon
 
 bool single_play_scene::onTouchBegan(Touch* touch, Event* unused_event) {
 
+  if(!enable_input_) return true;
+
   Point location = touch->getLocation();
 
   CCLOG("touched position %f, %f\n", location.x, location.y);
@@ -240,7 +256,7 @@ bool single_play_scene::onTouchBegan(Touch* touch, Event* unused_event) {
   if(single_play_status_ != SINGLE_PLAY_STATUS::PLAYING) return true;
   auto r = check_find_answer(location);
   if(!r) {
-    incorrect_effect();
+    incorrect_effect(location);
   }
 
   return true;
@@ -300,6 +316,8 @@ void single_play_scene::start_game() {
   single_play_status_ = SINGLE_PLAY_STATUS::PLAYING;
   curtain_left_img_->runAction(Sequence::create(Show::create(), FadeOut::create(2.0), NULL));
   curtain_right_img_->runAction(Sequence::create(Show::create(), FadeOut::create(2.0), NULL));
+
+  this->schedule(SEL_SCHEDULE(&single_play_scene::on_update_timer), 1/10);
 }
 
 void single_play_scene::pause_game() {
@@ -342,7 +360,8 @@ bool single_play_scene::check_find_answer(const Point& point) {
 
   auto is_find = false;
 
-  for(auto i=0; i<spots_info_->answer_container.size(); ++i) {
+  for(size_t i=0; i<spots_info_->answer_container.size(); ++i) {
+
     if(spots_info_->answer_container[i])
       continue;
 
@@ -363,8 +382,86 @@ void single_play_scene::correct_effect(int index) {
   spots_info_->answer_container[index] = true;
 }
 
-void single_play_scene::incorrect_effect() {
+void single_play_scene::incorrect_effect(Point point) {
+  enable_input_ = false;
   CCLOG("XX incorrect answer XX");
+  this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::done_incorrect_effect), 0.8f);
+  
+  auto audio = SimpleAudioEngine::getInstance();
+  audio->playEffect("sound/incorrect.wav");
+
+ auto progress = progress_timebar_->getPercentage();
+ progress_timebar_->setPercentage(progress - 10);
+
+  auto incorrect = Sprite::create("ui/incorrect.png");
+  incorrect->setScale(0.5f);
+  incorrect->setPosition(Vec2(point.x, point.y));
+  this->addChild(incorrect);
+  auto fadeOut = FadeOut::create(0.8f);
+  incorrect->runAction(fadeOut);
+  
+  auto moveBy0  = MoveBy::create(0.05f, Vec2(-10, 0));
+  auto moveBy1  = MoveBy::create(0.05f, Vec2(20, 0));
+  auto moveBy2  = MoveBy::create(0.05f, Vec2(-10, 0));
+  auto moveBy3  = MoveBy::create(0.05f, Vec2(-10, 0));
+  auto moveBy4  = MoveBy::create(0.05f, Vec2(20, 0));
+  auto moveBy5  = MoveBy::create(0.05f, Vec2(-10, 0));
+  auto moveBy6  = MoveBy::create(0.05f, Vec2(-10, 0));
+  auto moveBy7  = MoveBy::create(0.05f, Vec2(20, 0));
+  auto moveBy8  = MoveBy::create(0.05f, Vec2(-10, 0));
+  auto moveBy9  = MoveBy::create(0.05f, Vec2(-10, 0));
+  auto moveBy10 = MoveBy::create(0.05f, Vec2(20, 0));
+  auto moveBy11 = MoveBy::create(0.05f, Vec2(-10, 0));
+  auto moveBy12 = MoveBy::create(0.05f, Vec2(-10, 0));
+  auto moveBy13 = MoveBy::create(0.05f, Vec2(20, 0));
+  auto moveBy14 = MoveBy::create(0.05f, Vec2(-10, 0));
+
+  auto seq = Sequence::create(moveBy0, moveBy1, moveBy2, moveBy3, moveBy4, moveBy5, moveBy6, moveBy7, moveBy8, moveBy9, moveBy10, moveBy11, moveBy12, moveBy13, moveBy14, nullptr);
+
+  if(point.x <  Director::getInstance()->getVisibleSize().width / 2.0f) {
+    left_img->runAction(seq);
+  } else {
+    right_img->runAction(seq);
+  }
 }
 
-//http://stackoverflow.com/questions/38887808/how-to-add-child-nested-element-inside-json-using-json11-library
+void single_play_scene::done_incorrect_effect() {
+  enable_input_ = true; 
+}
+
+void single_play_scene::create_timer() {
+   time_bar = Sprite::create("ui/timebar2.png");
+
+  // 10초 동안 게이지 100% 동안 내려옴
+   auto timeOutline = Sprite::create("ui/timeoutline2.png");
+
+   auto timer_position = Vec2(time_bar->getContentSize().width/2 + 55, 
+			     (center_.y + iphone6_height / 2) - timeOutline->getContentSize().height * 0.5f);
+   
+   timer_position.y = timer_position.y - 2.0f;
+ 
+  timeOutline->setPosition(timer_position);
+
+  //timeOutline->setScaleX(0.65f);
+  //  timeOutline->setScaleY(0.7f);
+  timeOutline->setVisible(true);
+  this->addChild(timeOutline, 0);
+
+  progress_timebar_ = ProgressTimer::create(time_bar);
+
+  progress_timebar_->setPosition(timer_position);
+  //progressTimeBar_->setScaleX(0.65f);
+  //progressTimeBar_->setScaleY(0.7f);
+  progress_timebar_->setMidpoint(Point(0.0f, 1.0f));
+  progress_timebar_->setBarChangeRate(Point(1, 0));
+  progress_timebar_->setType(ProgressTimer::Type::BAR);
+  progress_timebar_->setPercentage(100);
+  this->addChild(progress_timebar_, 0);
+}
+
+void single_play_scene::on_update_timer() {
+  // 1분
+  float timer_sec = 60.0f;
+  float percentage = progress_timebar_->getPercentage();
+  progress_timebar_->setPercentage(percentage - (100 / (60 * timer_sec)));
+}
