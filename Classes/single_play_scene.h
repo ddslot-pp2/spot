@@ -8,7 +8,13 @@
 using namespace cocos2d;
 using namespace cocos2d::network;
 
-#define ccsf2(...) CCString::createWithFormat(__VA_ARGS__)->getCString()
+template <typename Ty>
+std::string to_string2(Ty v) {
+  Ty a = v;
+  std::stringstream ss;
+  ss << a;
+  return  ss.str();
+}
 
 struct stage_info;
 

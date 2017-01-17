@@ -505,7 +505,7 @@ void single_play_scene::on_update_timer() {
 }
 
 void single_play_scene::draw_stage_info(int current_stage, int end_stage) {
-  auto stage_info_font = std::to_string(current_stage) + "/" + std::to_string(end_stage);
+  auto stage_info_font = to_string2(current_stage) + "/" + to_string2(end_stage);
   auto label = Label::createWithSystemFont(stage_info_font.c_str(), "Ariel", 50);
   label->setColor(Color3B(255, 0, 0)); 
   //label->setWidth(400);
@@ -532,7 +532,7 @@ void single_play_scene::update_spot_info(int total_spot_count) {
 }
 
 void single_play_scene::draw_spot_info(int found_spot_count, int total_spot_count) {
-  auto spot_info_font = std::to_string(found_spot_count) + "/" + std::to_string(total_spot_count);
+  auto spot_info_font = to_string2(found_spot_count) + "/" + to_string2(total_spot_count);
   
   if(!spot_info_font_) {
     spot_info_font_ = Label::createWithSystemFont(spot_info_font.c_str(), "Ariel", 50);
