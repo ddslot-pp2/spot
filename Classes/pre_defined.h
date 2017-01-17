@@ -30,9 +30,10 @@ struct stage_info {
   std::vector<spot_rect> spot_rects;
   std::string left_img;
   std::string right_img;
-  int stage_count;
+  int current_stage_count;
+  int total_stage_count;
   int spot_count;
+  float play_time;
 };
-
 
 #endif

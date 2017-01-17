@@ -8,6 +8,8 @@
 using namespace cocos2d;
 using namespace cocos2d::network;
 
+#define ccsf2(...) CCString::createWithFormat(__VA_ARGS__)->getCString()
+
 struct stage_info;
 
 struct spots_info {
@@ -42,6 +44,8 @@ public:
     virtual void onTouchEnded(Touch* touch, Event* unused_event);
 
     void start_game();
+    void on_start_game();
+
     void pause_game();
 
     Sprite* curtain_left_img_;
@@ -66,6 +70,12 @@ public:
     void create_timer();
     void on_update_timer();
 
+    void draw_stage_info(int current_stage=1, int end_stage=102);
+    void update_spot_info(int total_spot_count=0);
+    void draw_spot_info(int found_spot_count=0, int total_spot_count=5);
+ 
+    void on_complete_stage();
+
  private:
     Texture2D left_texture;
     Texture2D right_texture;
@@ -86,6 +96,8 @@ public:
 
     ProgressTimer* progress_timebar_;
     Sprite* time_bar;
+
+    Label* spot_info_font_ = nullptr;
 
 };
 

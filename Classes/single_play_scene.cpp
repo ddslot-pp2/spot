@@ -71,7 +71,7 @@ bool single_play_scene::init()
 			      origin_.y + closeItem->getContentSize().height/2));
 
   // create menu, it's an autorelease object
-  auto menu = Menu::create(closeItem, NULL);
+  auto menu = Menu::create(closeItem, nullptr);
   menu->setPosition(Vec2::ZERO);
   this->addChild(menu, 1);
 
@@ -89,12 +89,14 @@ bool single_play_scene::init()
   // load ui
   create_timer();
 
-  // bg
+  // bg  
   /*
-  auto bg = Sprite::create("res/bbbgg.jpg");
-  bg->setPosition(Vec2(visibleSize.width/2 + origin_.x, visibleSize.height/2 + origin_.y + (iphone6_height/2) - offset_y));
-  this->addChild(bg, 1);
+  auto bg = Sprite::create("ui/bbg.jpg");
+  bg->setPosition(Vec2(center_.x, center_.y + 500));
+  this->addChild(bg, 2);
   */
+
+  //draw_stage_info();
 
   /*
   CCLOG("visible width: %f, height: %f\n", visibleSize.width, visibleSize.height);
@@ -230,7 +232,8 @@ void single_play_scene::on_http_request_completed(HttpClient *sender, HttpRespon
     strcpy(concatenated, _data.c_str());
 
     if(parsing_stage_info(std::move(_data))) {
-      CCLOG("stage_count: %d", stage_info_->stage_count);
+      CCLOG("stage_count: %d", stage_info_->current_stage_count);
+      CCLOG("stage_count: %d", stage_info_->total_stage_count);
       CCLOG("spot size: %d", stage_info_->spots.size());
       CCLOG("rects size: %d", stage_info_->spot_rects.size());
       CCLOG("left img: %s", stage_info_->left_img.c_str());
@@ -284,7 +287,9 @@ bool single_play_scene::parsing_stage_info(std::string&& payload) {
     }
 
     stage_info_ = std::make_shared<stage_info>();
-    stage_info_->stage_count = res["stage_count"].int_value();
+    stage_info_->current_stage_count = res["current_stage_count"].int_value();
+    stage_info_->total_stage_count = res["total_stage_count"].int_value();
+    stage_info_->play_time = static_cast<float>(res["play_time"].int_value());
 
     auto spots = res["spots"].array_items();    
     for(auto& d : spots) {
@@ -304,6 +309,9 @@ bool single_play_scene::parsing_stage_info(std::string&& payload) {
     stage_info_->left_img = res["left_img"].string_value().c_str(); 
     stage_info_->right_img = res["right_img"].string_value().c_str(); 
 
+    draw_stage_info(stage_info_->current_stage_count, stage_info_->total_stage_count);
+    update_spot_info(spots.size());
+
     http_request(stage_info_->left_img, "left_img");
     http_request(stage_info_->right_img, "right_img");
 
@@ -314,16 +322,44 @@ bool single_play_scene::parsing_stage_info(std::string&& payload) {
 
 void single_play_scene::start_game() {
   single_play_status_ = SINGLE_PLAY_STATUS::PLAYING;
-  curtain_left_img_->runAction(Sequence::create(Show::create(), FadeOut::create(2.0), NULL));
-  curtain_right_img_->runAction(Sequence::create(Show::create(), FadeOut::create(2.0), NULL));
+  curtain_left_img_->runAction(Sequence::create(Show::create(), FadeOut::create(2.0), nullptr));
+  curtain_right_img_->runAction(Sequence::create(Show::create(), FadeOut::create(2.0), nullptr));
 
+  // 커튼같은거 치우고나서부터 게임이 시작
+  this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::on_start_game), 1.0f);
+
+  auto ready = Sprite::create("ui/ready2.png");
+  ready->setPosition(Vec2(center_.x, center_.y + 50));
+  this->addChild(ready, 2);
+  ready->runAction(Sequence::create(Show::create(), FadeOut::create(1.0), nullptr));
+  auto audio = SimpleAudioEngine::getInstance();
+  audio->playEffect("sound/ready.wav");
+
+  auto go = Sprite::create("ui/go.png");
+  go->setPosition(Vec2(center_.x, center_.y + 50));
+  this->addChild(go, 2);
+  go->setOpacity(0);
+  go->runAction(Sequence::create(Show::create(), DelayTime::create(1.0), FadeIn::create(1.0), FadeOut::create(1.0), nullptr));
+  this->runAction(
+		  Sequence::create(
+				   DelayTime::create(1.0),
+				   CallFunc::create([]() {
+				       auto audio = SimpleAudioEngine::getInstance();
+				       audio->playEffect("sound/go.wav");
+				     }),
+				   nullptr
+				   )
+		  );
+}
+
+void single_play_scene::on_start_game() {
   this->schedule(SEL_SCHEDULE(&single_play_scene::on_update_timer), 1/10);
 }
 
 void single_play_scene::pause_game() {
   single_play_status_ = SINGLE_PLAY_STATUS::PAUSE;
-  curtain_left_img_->runAction(Sequence::create(Show::create(), FadeIn::create(1.0), NULL));
-  curtain_right_img_->runAction(Sequence::create(Show::create(), FadeIn::create(1.0), NULL));
+  curtain_left_img_->runAction(Sequence::create(Show::create(), FadeIn::create(1.0), nullptr));
+  curtain_right_img_->runAction(Sequence::create(Show::create(), FadeIn::create(1.0), nullptr));
 }
 
 void single_play_scene::generate_rects() {
@@ -380,6 +416,7 @@ bool single_play_scene::check_find_answer(const Point& point) {
 void single_play_scene::correct_effect(int index) {
   CCLOG("@@ correct answer @@");
   spots_info_->answer_container[index] = true;
+  update_spot_info(spots_info_->answer_container.size());
 }
 
 void single_play_scene::incorrect_effect(Point point) {
@@ -460,8 +497,54 @@ void single_play_scene::create_timer() {
 }
 
 void single_play_scene::on_update_timer() {
+  if(single_play_status_ == PAUSE) return;
   // 1분
-  float timer_sec = 60.0f;
+  float timer_sec = stage_info_->play_time;
   float percentage = progress_timebar_->getPercentage();
   progress_timebar_->setPercentage(percentage - (100 / (60 * timer_sec)));
+}
+
+void single_play_scene::draw_stage_info(int current_stage, int end_stage) {
+  auto stage_info_font = std::to_string(current_stage) + "/" + std::to_string(end_stage);
+  auto label = Label::createWithSystemFont(stage_info_font.c_str(), "Ariel", 50);
+  label->setColor(Color3B(255, 0, 0)); 
+  //label->setWidth(400);
+  label->setPosition(Vec2(center_.x, center_.y + 500));
+  this->addChild(label, 2);
+}
+
+void single_play_scene::update_spot_info(int total_spot_count) {
+  auto answer_count = 0;
+  if(spots_info_) {
+    for(const auto& answer : spots_info_->answer_container) {
+      if(answer) {
+	answer_count++;
+      }
+    }
+  }
+
+  if (answer_count == total_spot_count) {
+    // end of stage callback with timer
+    this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::on_complete_stage), 1.0f);
+  }
+
+  draw_spot_info(answer_count, total_spot_count);
+}
+
+void single_play_scene::draw_spot_info(int found_spot_count, int total_spot_count) {
+  auto spot_info_font = std::to_string(found_spot_count) + "/" + std::to_string(total_spot_count);
+  
+  if(!spot_info_font_) {
+    spot_info_font_ = Label::createWithSystemFont(spot_info_font.c_str(), "Ariel", 50);
+    spot_info_font_->setPosition(Vec2(center_.x + 400, center_.y + 500));
+    this->addChild(spot_info_font_, 2);
+    return;
+  }
+
+  //spot_info_font->setString(ccsf2("x %d", user_info::get().item_info_.get_hint_count()));
+  spot_info_font_->setString(spot_info_font.c_str());
+}
+
+void single_play_scene::on_complete_stage() {
+  CCLOG("on_complete_stage called\n");
 }
