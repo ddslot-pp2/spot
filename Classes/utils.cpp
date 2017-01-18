@@ -43,7 +43,7 @@ bool get_user_info<bool>(const std::string& key) {
 
 template<>
 int get_user_info<int>(const std::string& key) {
-  return UserDefault::getInstance()->getIntegerForKey(key.c_str());
+  return UserDefault::getInstance()->getIntegerForKey(key.c_str(), 0);
 }
 
 template<>
@@ -60,3 +60,6 @@ template<>
 std::string get_user_info<std::string>(const std::string& key) {
   return UserDefault::getInstance()->getStringForKey(key.c_str());
 }
+
+//auto user_default_save_path = UserDefault::getInstance()->getXMLFilePath();
+//CCLOG("%s", user_default_save_path.c_str());

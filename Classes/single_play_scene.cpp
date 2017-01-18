@@ -36,10 +36,14 @@ bool single_play_scene::init()
   // input control
   enable_input_ = true;
 
-  //save_user_info("string_test", std::string("testing"));
-  save_user_info("current_stage", 1);
+  //save_user_info("current_stage", 1);
 
   auto current_stage = get_user_info<int>("current_stage");
+  if(current_stage == 0) {
+    save_user_info("current_stage", 1);
+    current_stage =get_user_info<int>("current_stage");
+  }
+
   CCLOG("string test: %d \n", current_stage);
 
   download_count_ = 0;
@@ -547,4 +551,6 @@ void single_play_scene::draw_spot_info(int found_spot_count, int total_spot_coun
 
 void single_play_scene::on_complete_stage() {
   CCLOG("on_complete_stage called\n");
+  auto next_stage = stage_info_->current_stage_count + 1;
+  save_user_info("current_stage", next_stage);
 }
