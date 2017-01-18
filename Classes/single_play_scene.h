@@ -81,7 +81,11 @@ public:
     void draw_spot_info(int found_spot_count=0, int total_spot_count=5);
  
     void on_complete_stage();
-
+    
+    void on_load_item_store();
+  
+    void open_pause_menu();
+    void close_pause_menu(cocos2d::Ref* pSender);
  private:
     Texture2D left_texture;
     Texture2D right_texture;
@@ -105,6 +109,7 @@ public:
 
     Label* spot_info_font_ = nullptr;
 
+    //decltype(MenuItemFont) item_1;
 };
 
 #endif 

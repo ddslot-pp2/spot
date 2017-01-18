@@ -128,6 +128,7 @@ set(GAME_SRC
   Classes/HelloWorldScene.cpp
   Classes/utils.cpp
   Classes/single_play_scene.cpp
+  Classes/item_store_scene.cpp
   ${PLATFORM_SPECIFIC_SRC}
 )
 
@@ -138,6 +139,7 @@ set(GAME_HEADERS
   Classes/HelloWorldScene.h
   Classes/utils.h
   Classes/single_play_scene.h
+  Classes/item_store_scene.h
   ${PLATFORM_SPECIFIC_HEADERS}
 )
 

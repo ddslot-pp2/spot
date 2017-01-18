@@ -1,4 +1,5 @@
 #include "single_play_scene.h"
+#include "item_store_scene.h"
 #include "SimpleAudioEngine.h"
 #include "pre_defined.h"
 #include "utils.h"
@@ -41,7 +42,7 @@ bool single_play_scene::init()
   auto current_stage = get_user_info<int>("current_stage");
   if(current_stage == 0) {
     save_user_info("current_stage", 1);
-    current_stage =get_user_info<int>("current_stage");
+    current_stage = get_user_info<int>("current_stage");
   }
 
   CCLOG("string test: %d \n", current_stage);
@@ -51,7 +52,7 @@ bool single_play_scene::init()
   // http request for gathering stage information
   CCLOG("1\n");
   
-  auto req_url = std::string(req_stage_info_url) + "0";
+  auto req_url = std::string(req_stage_info_url) + to_string2(current_stage);
   http_request(req_url.c_str(), "stage_info");
   CCLOG("3\n");  
     
@@ -364,6 +365,8 @@ void single_play_scene::pause_game() {
   single_play_status_ = SINGLE_PLAY_STATUS::PAUSE;
   curtain_left_img_->runAction(Sequence::create(Show::create(), FadeIn::create(1.0), nullptr));
   curtain_right_img_->runAction(Sequence::create(Show::create(), FadeIn::create(1.0), nullptr));
+  open_pause_menu();
+
 }
 
 void single_play_scene::generate_rects() {
@@ -421,6 +424,8 @@ void single_play_scene::correct_effect(int index) {
   CCLOG("@@ correct answer @@");
   spots_info_->answer_container[index] = true;
   update_spot_info(spots_info_->answer_container.size());
+
+  pause_game();
 }
 
 void single_play_scene::incorrect_effect(Point point) {
@@ -554,3 +559,23 @@ void single_play_scene::on_complete_stage() {
   auto next_stage = stage_info_->current_stage_count + 1;
   save_user_info("current_stage", next_stage);
 }
+
+void single_play_scene::on_load_item_store() {
+  auto item_store_scene = item_store_scene::createScene();
+  Director::getInstance()->pushScene(item_store_scene);
+}
+
+void single_play_scene::open_pause_menu() {
+  auto item_1 = MenuItemFont::create("Play" , CC_CALLBACK_1(single_play_scene::close_pause_menu, this));
+  auto item_2 = MenuItemFont::create("Score" , CC_CALLBACK_1(single_play_scene::close_pause_menu, this));
+  auto item_3 = MenuItemFont::create("exit" , CC_CALLBACK_1(single_play_scene::close_pause_menu, this));
+     
+  auto menu = Menu::create(item_1, item_2, item_3, NULL);
+  menu->alignItemsVertically();
+  this->addChild(menu, 2);
+}
+
+void single_play_scene::close_pause_menu(cocos2d::Ref* pSender) {
+  CCLOG("menu clicked");
+}
+ 
