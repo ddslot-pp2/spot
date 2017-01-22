@@ -85,21 +85,23 @@ bool single_play_scene::init()
 
   // add a label shows "Hello World"
   // create and initialize a label  
+  /*
   label_ = Label::createWithTTF("Waitting For Images", "fonts/Marker Felt.ttf", 24);
   label_->setPosition(Vec2(origin_.x + visibleSize.width/2,
 			  origin_.y + visibleSize.height - label_->getContentSize().height));
   this->addChild(label_, 1);
+  */
 
-
-  // load ui
-  create_timer();
 
   // bg  
-  /*
-  auto bg = Sprite::create("ui/bbg.jpg");
-  bg->setPosition(Vec2(center_.x, center_.y + 500));
-  this->addChild(bg, 2);
-  */
+  auto bg = Sprite::create("ui/back_ground.png");
+  bg->setPosition(Vec2(center_.x, center_.y));
+  this->addChild(bg);
+
+  // load ui
+  //create_pause();
+  create_timer();
+  
 
   //draw_stage_info();
 
@@ -110,14 +112,28 @@ bool single_play_scene::init()
   http_request("https://images.pristineauction.com/50/501420/main_7-Hank-Greenberg-Signed-Charles-Fazzino-Custom-Hand-Painted-3D-Pop-Art-Baseball-with-Swarovski-Crystals-JSA-LOA-PristineAuction.com.jpg", "right_img");
     */
 
-
   curtain_left_img_ = Sprite::create("res/curtain.png");
   curtain_left_img_->setPosition(Vec2((visibleSize.width/2)/2 + origin_.x - offset_x, (visibleSize.height/2 + origin_.y) - offset_y));
   this->addChild(curtain_left_img_, 2);
 
   curtain_right_img_ = Sprite::create("res/curtain.png");
-  curtain_right_img_->setPosition(Vec2( (visibleSize.width/2)+(visibleSize.width/2/2) + origin_.x + offset_x, (visibleSize.height/2 + origin_.y)  - offset_y));
+  curtain_right_img_->setPosition(Vec2((visibleSize.width/2)+(visibleSize.width/2/2) + origin_.x + offset_x, (visibleSize.height/2 + origin_.y)  - offset_y));
   this->addChild(curtain_right_img_, 2);
+  
+  auto status = Sprite::create("ui/info_bar.png");
+  auto status_position = Vec2(time_bar->getContentSize().width + 400, 
+			     (center_.y + iphone6_height / 2) - status->getContentSize().height * 0.42f);
+
+  status->setPosition(status_position);
+  this->addChild(status, 2);
+
+  auto search = Sprite::create("ui/search.png");
+  search_position_ = Vec2(
+			      time_bar->getContentSize().width + 400 + (status->getContentSize().width * 0.5f) + 100, 
+			      (center_.y + iphone6_height / 2) - search->getContentSize().height * 0.60f);
+
+  search->setPosition(search_position_);
+  this->addChild(search, 2);
   
   // handle input
   auto touch_listener = EventListenerTouchOneByOne::create();
@@ -225,7 +241,7 @@ void single_play_scene::on_http_request_completed(HttpClient *sender, HttpRespon
 
     ++download_count_;
     if (download_count_ >= 2) {
-      label_->setString("Loading Textures Done");
+      //label_->setString("Loading Textures Done");
       start_game();
     }
   }
@@ -257,6 +273,11 @@ bool single_play_scene::onTouchBegan(Touch* touch, Event* unused_event) {
   if(!enable_input_) return true;
 
   Point location = touch->getLocation();
+
+  if(location.y > image_size_y) {
+    CCLOG("ui 영역 입니다");
+    return true;
+  }
 
   CCLOG("touched position %f, %f\n", location.x, location.y);
 
@@ -358,6 +379,7 @@ void single_play_scene::start_game() {
 }
 
 void single_play_scene::on_start_game() {
+  create_pause();
   this->schedule(SEL_SCHEDULE(&single_play_scene::on_update_timer), 1/10);
 }
 
@@ -366,7 +388,12 @@ void single_play_scene::pause_game() {
   curtain_left_img_->runAction(Sequence::create(Show::create(), FadeIn::create(1.0), nullptr));
   curtain_right_img_->runAction(Sequence::create(Show::create(), FadeIn::create(1.0), nullptr));
   open_pause_menu();
+}
 
+void single_play_scene::resume_game() {
+  single_play_status_ = SINGLE_PLAY_STATUS::PLAYING;
+  curtain_left_img_->runAction(Sequence::create(Show::create(), FadeOut::create(2.0), nullptr));
+  curtain_right_img_->runAction(Sequence::create(Show::create(), FadeOut::create(2.0), nullptr));
 }
 
 void single_play_scene::generate_rects() {
@@ -475,23 +502,76 @@ void single_play_scene::done_incorrect_effect() {
   enable_input_ = true; 
 }
 
+void single_play_scene::create_pause() {
+  pause_button = Button::create("ui/pause.png", "ui/pause_press.png", "ui/paly.png");
+  //button->setTitleText("pause_button");
+  pause_button->addTouchEventListener([&](Ref* sender, Widget::TouchEventType type){
+      switch (type)
+        {
+	case ui::Widget::TouchEventType::BEGAN:
+	  pause_button->setBright(false);
+	  pause_button->setEnabled(false);
+	  break;
+
+	case ui::Widget::TouchEventType::ENDED:
+	  resume_button->setBright(true);
+	  resume_button->setEnabled(true);
+	  pause_game();
+	  break;
+
+	default:
+	  break;
+        }
+    });
+  auto pause_position = Vec2(60, 
+			    (center_.y + iphone6_height / 2) - pause_button->getContentSize().height * 0.60f);
+
+  pause_button->setPosition(pause_position);
+  this->addChild(pause_button, 2);
+
+  resume_button = Button::create("ui/paly.png", "ui/paly.png", "ui/pause.png");
+  //button->setTitleText("pause_button");
+  resume_button->addTouchEventListener([&](Ref* sender, Widget::TouchEventType type) {
+      switch (type)
+        {
+	case ui::Widget::TouchEventType::BEGAN:
+	  resume_button->setBright(false);
+	  resume_button->setEnabled(false);
+
+	  break;
+	case ui::Widget::TouchEventType::ENDED:
+	  pause_button->setBright(true);
+	  pause_button->setEnabled(true);
+	  resume_game();
+	  break;
+
+	default:
+	  break;
+        }
+    });
+  resume_button->setEnabled(false);
+  resume_button->setPosition(pause_position);
+  this->addChild(resume_button, 2);
+  resume_button->setBright(false);
+}
+
 void single_play_scene::create_timer() {
-   time_bar = Sprite::create("ui/timebar2.png");
+   time_bar = Sprite::create("ui/time_bar.png");
 
   // 10초 동안 게이지 100% 동안 내려옴
-   auto timeOutline = Sprite::create("ui/timeoutline2.png");
+   auto timeOutline = Sprite::create("ui/time_bar_background.png");
 
-   auto timer_position = Vec2(time_bar->getContentSize().width/2 + 55, 
-			     (center_.y + iphone6_height / 2) - timeOutline->getContentSize().height * 0.5f);
+   auto timer_position = Vec2(time_bar->getContentSize().width/2 + 100, 
+			     (center_.y + iphone6_height / 2) - timeOutline->getContentSize().height * 0.30f);
    
-   timer_position.y = timer_position.y - 2.0f;
+   timer_position.y = timer_position.y;
  
   timeOutline->setPosition(timer_position);
 
   //timeOutline->setScaleX(0.65f);
   //  timeOutline->setScaleY(0.7f);
   timeOutline->setVisible(true);
-  this->addChild(timeOutline, 0);
+  this->addChild(timeOutline, 1);
 
   progress_timebar_ = ProgressTimer::create(time_bar);
 
@@ -502,7 +582,7 @@ void single_play_scene::create_timer() {
   progress_timebar_->setBarChangeRate(Point(1, 0));
   progress_timebar_->setType(ProgressTimer::Type::BAR);
   progress_timebar_->setPercentage(100);
-  this->addChild(progress_timebar_, 0);
+  this->addChild(progress_timebar_, 1);
 }
 
 void single_play_scene::on_update_timer() {
@@ -515,10 +595,11 @@ void single_play_scene::on_update_timer() {
 
 void single_play_scene::draw_stage_info(int current_stage, int end_stage) {
   auto stage_info_font = to_string2(current_stage) + "/" + to_string2(end_stage);
-  auto label = Label::createWithSystemFont(stage_info_font.c_str(), "Ariel", 50);
-  label->setColor(Color3B(255, 0, 0)); 
+  auto label = Label::createWithSystemFont(stage_info_font.c_str(), "Ariel", 40);
+  label->setColor(Color3B(255, 255, 255)); 
+  //label->enableOutline(Color4B(255,0,0,255),10);
   //label->setWidth(400);
-  label->setPosition(Vec2(center_.x, center_.y + 500));
+  label->setPosition(Vec2(center_.x + 350, center_.y + 505));
   this->addChild(label, 2);
 }
 
@@ -544,8 +625,9 @@ void single_play_scene::draw_spot_info(int found_spot_count, int total_spot_coun
   auto spot_info_font = to_string2(found_spot_count) + "/" + to_string2(total_spot_count);
   
   if(!spot_info_font_) {
-    spot_info_font_ = Label::createWithSystemFont(spot_info_font.c_str(), "Ariel", 50);
-    spot_info_font_->setPosition(Vec2(center_.x + 400, center_.y + 500));
+    spot_info_font_ = Label::createWithSystemFont(spot_info_font.c_str(), "Ariel", 40);
+    spot_info_font_->setPosition(Vec2(center_.x + 650, center_.y + 505));
+    spot_info_font_->setColor(Color3B(255, 255, 255)); 
     this->addChild(spot_info_font_, 2);
     return;
   }

@@ -3,10 +3,12 @@
 
 #include "cocos2d.h"
 #include "network/HttpClient.h"
+#include "ui/CocosGUI.h"
 #include <atomic>
 
 using namespace cocos2d;
 using namespace cocos2d::network;
+using namespace ui;
 
 template <typename Ty>
 std::string to_string2(Ty v) {
@@ -53,6 +55,7 @@ public:
     void on_start_game();
 
     void pause_game();
+    void resume_game();
 
     Sprite* curtain_left_img_;
     Sprite* curtain_right_img_;
@@ -73,6 +76,7 @@ public:
     void incorrect_effect(Point point);
     void done_incorrect_effect();
 
+    void create_pause();
     void create_timer();
     void on_update_timer();
 
@@ -108,6 +112,11 @@ public:
     Sprite* time_bar;
 
     Label* spot_info_font_ = nullptr;
+
+    Button* pause_button = nullptr;
+    Button* resume_button = nullptr;
+
+    Vec2 search_position_;
 
     //decltype(MenuItemFont) item_1;
 };
