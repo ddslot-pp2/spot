@@ -8,10 +8,10 @@ static const int offset_x = 2;
 static const int offset_y = 40;
 
 static const int image_size_x = (1920 / 2) - offset_x;
-static const int image_size_y = 1000;
+static const int image_size_y = 1000 - 20;
 
-//static const char* req_stage_info_url = "http://127.0.0.1:3000/stage_info/";
-static const char* req_stage_info_url = "http://192.168.25.18:3000/stage_info/";
+static const char* req_stage_info_url = "http://127.0.0.1:3000/stage_info/";
+//static const char* req_stage_info_url = "http://192.168.25.18:3000/stage_info/";
 
 // img width  = 958;
 // img height = 1080;

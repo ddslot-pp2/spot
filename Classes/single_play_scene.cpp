@@ -36,6 +36,8 @@ bool single_play_scene::init()
 
   // input control
   enable_input_ = true;
+ 
+  is_pause_button_ = true;
 
   //save_user_info("current_stage", 1);
 
@@ -125,7 +127,7 @@ bool single_play_scene::init()
 			     (center_.y + iphone6_height / 2) - status->getContentSize().height * 0.42f);
 
   status->setPosition(status_position);
-  this->addChild(status, 2);
+  this->addChild(status, 1);
 
   auto search = Sprite::create("ui/search.png");
   search_position_ = Vec2(
@@ -133,7 +135,7 @@ bool single_play_scene::init()
 			      (center_.y + iphone6_height / 2) - search->getContentSize().height * 0.60f);
 
   search->setPosition(search_position_);
-  this->addChild(search, 2);
+  this->addChild(search, 1);
   
   // handle input
   auto touch_listener = EventListenerTouchOneByOne::create();
@@ -276,6 +278,11 @@ bool single_play_scene::onTouchBegan(Touch* touch, Event* unused_event) {
 
   if(location.y > image_size_y) {
     CCLOG("ui 영역 입니다");
+    return true;
+  }
+
+  if(single_play_status_ != PLAYING) {
+    CCLOG("게임상태 아님");
     return true;
   }
 
@@ -439,6 +446,13 @@ bool single_play_scene::check_find_answer(const Point& point) {
     auto& right_rect = spots_info_->right_rects[i];
 
     if (left_rect.containsPoint(point) || right_rect.containsPoint(point)) {      
+
+      auto audio = SimpleAudioEngine::getInstance();
+      audio->playEffect("sound/correct.wav");
+
+      start_circle_animation(Vec2(left_rect.getMidX(), left_rect.getMidY()));
+      start_circle_animation(Vec2(right_rect.getMidX(), right_rect.getMidY()));
+
       correct_effect(i);
       return true;
     }
@@ -451,8 +465,6 @@ void single_play_scene::correct_effect(int index) {
   CCLOG("@@ correct answer @@");
   spots_info_->answer_container[index] = true;
   update_spot_info(spots_info_->answer_container.size());
-
-  pause_game();
 }
 
 void single_play_scene::incorrect_effect(Point point) {
@@ -509,14 +521,23 @@ void single_play_scene::create_pause() {
       switch (type)
         {
 	case ui::Widget::TouchEventType::BEGAN:
+	  if(!is_pause_button_) {
+	    return false;
+	  }
+
+	  is_pause_button_ = false;
+	  this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::on_unlock_pause_button), 2.0f);
+
 	  pause_button->setBright(false);
 	  pause_button->setEnabled(false);
-	  break;
 
-	case ui::Widget::TouchEventType::ENDED:
 	  resume_button->setBright(true);
 	  resume_button->setEnabled(true);
 	  pause_game();
+
+	  break;
+
+	case ui::Widget::TouchEventType::ENDED:
 	  break;
 
 	default:
@@ -535,14 +556,22 @@ void single_play_scene::create_pause() {
       switch (type)
         {
 	case ui::Widget::TouchEventType::BEGAN:
+	  if(!is_pause_button_) {
+	    return false;
+	  }
+
+	  is_pause_button_ = false;
+	  this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::on_unlock_pause_button), 2.0f);
+
 	  resume_button->setBright(false);
 	  resume_button->setEnabled(false);
 
-	  break;
-	case ui::Widget::TouchEventType::ENDED:
 	  pause_button->setBright(true);
 	  pause_button->setEnabled(true);
 	  resume_game();
+
+	  break;
+	case ui::Widget::TouchEventType::ENDED:	
 	  break;
 
 	default:
@@ -586,7 +615,7 @@ void single_play_scene::create_timer() {
 }
 
 void single_play_scene::on_update_timer() {
-  if(single_play_status_ == PAUSE) return;
+  if(single_play_status_ != PLAYING) return;
   // 1분
   float timer_sec = stage_info_->play_time;
   float percentage = progress_timebar_->getPercentage();
@@ -600,7 +629,7 @@ void single_play_scene::draw_stage_info(int current_stage, int end_stage) {
   //label->enableOutline(Color4B(255,0,0,255),10);
   //label->setWidth(400);
   label->setPosition(Vec2(center_.x + 350, center_.y + 505));
-  this->addChild(label, 2);
+  this->addChild(label, 1);
 }
 
 void single_play_scene::update_spot_info(int total_spot_count) {
@@ -615,6 +644,7 @@ void single_play_scene::update_spot_info(int total_spot_count) {
 
   if (answer_count == total_spot_count) {
     // end of stage callback with timer
+    single_play_status_ = RESULT;
     this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::on_complete_stage), 1.0f);
   }
 
@@ -628,7 +658,7 @@ void single_play_scene::draw_spot_info(int found_spot_count, int total_spot_coun
     spot_info_font_ = Label::createWithSystemFont(spot_info_font.c_str(), "Ariel", 40);
     spot_info_font_->setPosition(Vec2(center_.x + 650, center_.y + 505));
     spot_info_font_->setColor(Color3B(255, 255, 255)); 
-    this->addChild(spot_info_font_, 2);
+    this->addChild(spot_info_font_, 1);
     return;
   }
 
@@ -661,3 +691,23 @@ void single_play_scene::close_pause_menu(cocos2d::Ref* pSender) {
   CCLOG("menu clicked");
 }
  
+void single_play_scene::on_unlock_pause_button() {
+  CCLOG("on unlock called");
+  is_pause_button_ = true;
+}
+
+void single_play_scene::start_circle_animation(Vec2 pos) {
+ auto circle_animation = Animation::create();
+  circle_animation->setDelayPerUnit(0.1f);
+  circle_animation->addSpriteFrameWithFileName("animation/correct/circle0.png");
+  circle_animation->addSpriteFrameWithFileName("animation/correct/circle1.png");
+  circle_animation->addSpriteFrameWithFileName("animation/correct/circle2.png");
+  circle_animation->addSpriteFrameWithFileName("animation/correct/circle3.png");
+  circle_animation->addSpriteFrameWithFileName("animation/correct/circle4.png");
+
+  auto correct_circle = Sprite::create("animation/correct/circle0.png");
+  correct_circle->setPosition(Vec2(pos.x, pos.y));
+  correct_circle->setScale(0.5f);
+  correct_circle->runAction(Animate::create(circle_animation));
+  this->addChild(correct_circle, 0);
+}

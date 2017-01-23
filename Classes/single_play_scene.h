@@ -90,7 +90,11 @@ public:
   
     void open_pause_menu();
     void close_pause_menu(cocos2d::Ref* pSender);
+
  private:
+    void start_circle_animation(Vec2 pos);
+    void on_unlock_pause_button();
+
     Texture2D left_texture;
     Texture2D right_texture;
     Vec2 origin_;
@@ -117,6 +121,8 @@ public:
     Button* resume_button = nullptr;
 
     Vec2 search_position_;
+
+    bool is_pause_button_;
 
     //decltype(MenuItemFont) item_1;
 };
