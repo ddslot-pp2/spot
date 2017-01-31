@@ -124,6 +124,8 @@ public:
 
     bool is_pause_button_;
 
+    Menu* paused_navigation_menu_;
+
     //decltype(MenuItemFont) item_1;
 };
 

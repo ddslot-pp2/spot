@@ -114,25 +114,25 @@ bool single_play_scene::init()
   http_request("https://images.pristineauction.com/50/501420/main_7-Hank-Greenberg-Signed-Charles-Fazzino-Custom-Hand-Painted-3D-Pop-Art-Baseball-with-Swarovski-Crystals-JSA-LOA-PristineAuction.com.jpg", "right_img");
     */
 
-  curtain_left_img_ = Sprite::create("res/curtain.png");
+  curtain_left_img_ = Sprite::create("ui/curtain_left.png");
   curtain_left_img_->setPosition(Vec2((visibleSize.width/2)/2 + origin_.x - offset_x, (visibleSize.height/2 + origin_.y) - offset_y));
   this->addChild(curtain_left_img_, 2);
 
-  curtain_right_img_ = Sprite::create("res/curtain.png");
+  curtain_right_img_ = Sprite::create("ui/curtain_right.png");
   curtain_right_img_->setPosition(Vec2((visibleSize.width/2)+(visibleSize.width/2/2) + origin_.x + offset_x, (visibleSize.height/2 + origin_.y)  - offset_y));
   this->addChild(curtain_right_img_, 2);
   
   auto status = Sprite::create("ui/info_bar.png");
-  auto status_position = Vec2(time_bar->getContentSize().width + 400, 
-			     (center_.y + iphone6_height / 2) - status->getContentSize().height * 0.42f);
+  auto status_position = Vec2(time_bar->getContentSize().width + 450, 
+			     (center_.y + iphone6_height / 2) - status->getContentSize().height * 0.60f);
 
   status->setPosition(status_position);
   this->addChild(status, 1);
 
   auto search = Sprite::create("ui/search.png");
   search_position_ = Vec2(
-			      time_bar->getContentSize().width + 400 + (status->getContentSize().width * 0.5f) + 100, 
-			      (center_.y + iphone6_height / 2) - search->getContentSize().height * 0.60f);
+			      time_bar->getContentSize().width + 400 + (status->getContentSize().width * 0.5f) + 220, 
+			      (center_.y + iphone6_height / 2) - search->getContentSize().height * 0.50f);
 
   search->setPosition(search_position_);
   this->addChild(search, 1);
@@ -545,7 +545,7 @@ void single_play_scene::create_pause() {
         }
     });
   auto pause_position = Vec2(60, 
-			    (center_.y + iphone6_height / 2) - pause_button->getContentSize().height * 0.60f);
+			    (center_.y + iphone6_height / 2) - pause_button->getContentSize().height * 0.50f);
 
   pause_button->setPosition(pause_position);
   this->addChild(pause_button, 2);
@@ -559,6 +559,8 @@ void single_play_scene::create_pause() {
 	  if(!is_pause_button_) {
 	    return false;
 	  }
+
+	  paused_navigation_menu_->setVisible(false);
 
 	  is_pause_button_ = false;
 	  this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::on_unlock_pause_button), 2.0f);
@@ -590,8 +592,8 @@ void single_play_scene::create_timer() {
   // 10초 동안 게이지 100% 동안 내려옴
    auto timeOutline = Sprite::create("ui/time_bar_background.png");
 
-   auto timer_position = Vec2(time_bar->getContentSize().width/2 + 100, 
-			     (center_.y + iphone6_height / 2) - timeOutline->getContentSize().height * 0.30f);
+   auto timer_position = Vec2(time_bar->getContentSize().width/2 + 120, 
+			     (center_.y + iphone6_height / 2) - timeOutline->getContentSize().height * 0.50f);
    
    timer_position.y = timer_position.y;
  
@@ -623,12 +625,12 @@ void single_play_scene::on_update_timer() {
 }
 
 void single_play_scene::draw_stage_info(int current_stage, int end_stage) {
-  auto stage_info_font = to_string2(current_stage) + "/" + to_string2(end_stage);
-  auto label = Label::createWithSystemFont(stage_info_font.c_str(), "Ariel", 40);
+  auto stage_info_font = to_string2(current_stage) + "    " + to_string2(end_stage);
+  auto label = Label::createWithSystemFont(stage_info_font.c_str(), "Ariel", 42);
   label->setColor(Color3B(255, 255, 255)); 
   //label->enableOutline(Color4B(255,0,0,255),10);
   //label->setWidth(400);
-  label->setPosition(Vec2(center_.x + 350, center_.y + 505));
+  label->setPosition(Vec2(center_.x + 280, center_.y + 490));
   this->addChild(label, 1);
 }
 
@@ -652,11 +654,11 @@ void single_play_scene::update_spot_info(int total_spot_count) {
 }
 
 void single_play_scene::draw_spot_info(int found_spot_count, int total_spot_count) {
-  auto spot_info_font = to_string2(found_spot_count) + "/" + to_string2(total_spot_count);
+  auto spot_info_font = to_string2(found_spot_count) + "    " + to_string2(total_spot_count);
   
   if(!spot_info_font_) {
-    spot_info_font_ = Label::createWithSystemFont(spot_info_font.c_str(), "Ariel", 40);
-    spot_info_font_->setPosition(Vec2(center_.x + 650, center_.y + 505));
+    spot_info_font_ = Label::createWithSystemFont(spot_info_font.c_str(), "Ariel", 42);
+    spot_info_font_->setPosition(Vec2(center_.x + 535, center_.y + 490));
     spot_info_font_->setColor(Color3B(255, 255, 255)); 
     this->addChild(spot_info_font_, 1);
     return;
@@ -678,17 +680,28 @@ void single_play_scene::on_load_item_store() {
 }
 
 void single_play_scene::open_pause_menu() {
-  auto item_1 = MenuItemFont::create("Play" , CC_CALLBACK_1(single_play_scene::close_pause_menu, this));
-  auto item_2 = MenuItemFont::create("Score" , CC_CALLBACK_1(single_play_scene::close_pause_menu, this));
-  auto item_3 = MenuItemFont::create("exit" , CC_CALLBACK_1(single_play_scene::close_pause_menu, this));
+  auto item_1 = MenuItemFont::create("계속하기" , CC_CALLBACK_1(single_play_scene::close_pause_menu, this));
+  auto item_2 = MenuItemFont::create("랭킹보기" , CC_CALLBACK_1(single_play_scene::close_pause_menu, this));
+  auto item_3 = MenuItemFont::create("나가기" , CC_CALLBACK_1(single_play_scene::close_pause_menu, this));
      
-  auto menu = Menu::create(item_1, item_2, item_3, NULL);
-  menu->alignItemsVertically();
-  this->addChild(menu, 2);
+  paused_navigation_menu_ = Menu::create(item_1, item_2, item_3, NULL);
+  paused_navigation_menu_->alignItemsVerticallyWithPadding(30);
+  //paused_navigation_menu_->alignItemsVertically();
+  this->addChild(paused_navigation_menu_, 2);
 }
 
 void single_play_scene::close_pause_menu(cocos2d::Ref* pSender) {
-  CCLOG("menu clicked");
+
+  this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::on_unlock_pause_button), 2.0f);
+
+  resume_button->setBright(false);
+  resume_button->setEnabled(false);
+
+  pause_button->setBright(true);
+  pause_button->setEnabled(true);
+  resume_game();
+
+  paused_navigation_menu_->setVisible(false);
 }
  
 void single_play_scene::on_unlock_pause_button() {
