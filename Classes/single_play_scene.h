@@ -91,6 +91,8 @@ public:
     void open_pause_menu();
     void close_pause_menu(cocos2d::Ref* pSender);
 
+    void on_allowing_input();
+
  private:
     void start_circle_animation(Vec2 pos);
     void on_unlock_pause_button();
@@ -125,6 +127,8 @@ public:
     bool is_pause_button_;
 
     Menu* paused_navigation_menu_;
+
+    bool is_allowing_input_ = true;
 
     //decltype(MenuItemFont) item_1;
 };

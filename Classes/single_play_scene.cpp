@@ -394,7 +394,8 @@ void single_play_scene::pause_game() {
   single_play_status_ = SINGLE_PLAY_STATUS::PAUSE;
   curtain_left_img_->runAction(Sequence::create(Show::create(), FadeIn::create(1.0), nullptr));
   curtain_right_img_->runAction(Sequence::create(Show::create(), FadeIn::create(1.0), nullptr));
-  open_pause_menu();
+
+  this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::open_pause_menu), 1.0f);
 }
 
 void single_play_scene::resume_game() {
@@ -521,12 +522,20 @@ void single_play_scene::create_pause() {
       switch (type)
         {
 	case ui::Widget::TouchEventType::BEGAN:
+
+	  if (!is_allowing_input_) {
+	    return false;
+	  }
+
+	  is_allowing_input_ = false;
+	  this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::on_allowing_input), 2.1f);
+
 	  if(!is_pause_button_) {
 	    return false;
 	  }
 
 	  is_pause_button_ = false;
-	  this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::on_unlock_pause_button), 2.0f);
+	  //this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::on_unlock_pause_button), 2.0f);
 
 	  pause_button->setBright(false);
 	  pause_button->setEnabled(false);
@@ -556,13 +565,20 @@ void single_play_scene::create_pause() {
       switch (type)
         {
 	case ui::Widget::TouchEventType::BEGAN:
-	  if(!is_pause_button_) {
+
+	  if (!is_allowing_input_) {
 	    return false;
 	  }
 
+	  is_allowing_input_ = false;
+	  this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::on_allowing_input), 2.1f);
+	  //if(!is_pause_button_) {
+	  //return false;
+	  //}
+
 	  paused_navigation_menu_->setVisible(false);
 
-	  is_pause_button_ = false;
+	  //is_pause_button_ = false;
 	  this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::on_unlock_pause_button), 2.0f);
 
 	  resume_button->setBright(false);
@@ -580,6 +596,7 @@ void single_play_scene::create_pause() {
 	  break;
         }
     });
+
   resume_button->setEnabled(false);
   resume_button->setPosition(pause_position);
   this->addChild(resume_button, 2);
@@ -680,6 +697,8 @@ void single_play_scene::on_load_item_store() {
 }
 
 void single_play_scene::open_pause_menu() {
+
+  //is_allowing_input_ = false;
   auto item_1 = MenuItemFont::create("계속하기" , CC_CALLBACK_1(single_play_scene::close_pause_menu, this));
   auto item_2 = MenuItemFont::create("랭킹보기" , CC_CALLBACK_1(single_play_scene::close_pause_menu, this));
   auto item_3 = MenuItemFont::create("나가기" , CC_CALLBACK_1(single_play_scene::close_pause_menu, this));
@@ -691,6 +710,12 @@ void single_play_scene::open_pause_menu() {
 }
 
 void single_play_scene::close_pause_menu(cocos2d::Ref* pSender) {
+
+  if (!is_allowing_input_) {
+    return;
+  }
+
+  this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::on_allowing_input), 2.1f);
 
   this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::on_unlock_pause_button), 2.0f);
 
@@ -707,6 +732,10 @@ void single_play_scene::close_pause_menu(cocos2d::Ref* pSender) {
 void single_play_scene::on_unlock_pause_button() {
   CCLOG("on unlock called");
   is_pause_button_ = true;
+}
+
+void single_play_scene::on_allowing_input() {
+  if(!is_allowing_input_) is_allowing_input_ = true;
 }
 
 void single_play_scene::start_circle_animation(Vec2 pos) {
