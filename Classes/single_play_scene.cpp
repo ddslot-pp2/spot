@@ -634,8 +634,16 @@ void single_play_scene::create_timer() {
 }
 
 void single_play_scene::on_update_timer() {
+
+  //CCLOG("percentage: %f", progress_timebar_->getPercentage());
+
   if(single_play_status_ != PLAYING) return;
   // 1분
+
+  if (progress_timebar_->getPercentage() <= 0.0f) {
+    game_over();
+  }
+
   float timer_sec = stage_info_->play_time;
   float percentage = progress_timebar_->getPercentage();
   progress_timebar_->setPercentage(percentage - (100 / (60 * timer_sec)));
@@ -752,4 +760,52 @@ void single_play_scene::start_circle_animation(Vec2 pos) {
   correct_circle->setScale(0.5f);
   correct_circle->runAction(Animate::create(circle_animation));
   this->addChild(correct_circle, 0);
+}
+
+void single_play_scene::game_over() {
+  if(single_play_status_ == RESULT) return;
+  single_play_status_ = RESULT;
+
+  curtain_left_img_->runAction(Sequence::create(Show::create(), FadeIn::create(1.0), nullptr));
+  curtain_right_img_->runAction(Sequence::create(Show::create(), FadeIn::create(1.0), nullptr));
+  // game over effect
+  resume_button->setBright(false);
+  resume_button->setEnabled(false);
+  pause_button->setBright(false);
+  pause_button->setEnabled(false);
+
+  auto audio = SimpleAudioEngine::getInstance();
+  audio->playEffect("sound/game_over.mp3");
+
+  auto game_over = Sprite::create("ui/game_over_04.jpg");
+
+  //incorrect->setScale(0.5f);
+  game_over->setPosition(center_);
+  this->addChild(game_over, 2);
+
+  this->scheduleOnce(SEL_SCHEDULE(&single_play_scene::on_create_end_navigation_menu), 1.0f);
+
+  CCLOG("game over");
+}
+
+void single_play_scene::on_create_end_navigation_menu() {
+  auto item_1 = MenuItemFont::create("다시하기" , CC_CALLBACK_1(single_play_scene::retry_game, this));
+  auto item_2 = MenuItemFont::create("랭킹보기" , CC_CALLBACK_1(single_play_scene::view_ranking, this));
+  auto item_3 = MenuItemFont::create("나가기" , CC_CALLBACK_1(single_play_scene::end_game, this));
+     
+  auto end_navigation_menu_ = Menu::create(item_1, item_2, item_3, NULL);
+  end_navigation_menu_->alignItemsVerticallyWithPadding(30);
+  this->addChild(end_navigation_menu_, 2);
+}
+
+void single_play_scene::retry_game(cocos2d::Ref* pSender) {
+  Director::getInstance()->replaceScene(single_play_scene::createScene());
+}
+
+void single_play_scene::view_ranking(cocos2d::Ref* pSender) {
+ CCLOG("view_ranking");
+}
+
+void single_play_scene::end_game(cocos2d::Ref* pSender) {
+   CCLOG("end_game");
 }

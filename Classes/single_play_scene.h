@@ -52,10 +52,16 @@ public:
     virtual void onTouchEnded(Touch* touch, Event* unused_event);
 
     void start_game();
+    void end_game(cocos2d::Ref* pSender);
+
     void on_start_game();
 
     void pause_game();
     void resume_game();
+
+    void retry_game(cocos2d::Ref* pSender);
+    void view_ranking(cocos2d::Ref* pSender);
+
 
     Sprite* curtain_left_img_;
     Sprite* curtain_right_img_;
@@ -93,9 +99,13 @@ public:
 
     void on_allowing_input();
 
+    void game_over();
+
  private:
     void start_circle_animation(Vec2 pos);
     void on_unlock_pause_button();
+
+    void on_create_end_navigation_menu();
 
     Texture2D left_texture;
     Texture2D right_texture;
